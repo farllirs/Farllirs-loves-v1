@@ -1,7 +1,25 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Download, Heart, Type, ImageIcon, Globe, Moon, Sun, Sparkles, Star, Camera, Eye, Settings } from "lucide-react"
+import {
+  Download,
+  Heart,
+  Type,
+  ImageIcon,
+  Globe,
+  Moon,
+  Sun,
+  Sparkles,
+  Star,
+  Camera,
+  Eye,
+  Settings,
+  Volume2,
+  VolumeX,
+  Maximize,
+  QrCode,
+  FileText,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,6 +29,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useTheme } from "next-themes"
 import { Badge } from "@/components/ui/badge"
+import TemplatesGallery from "@/components/templates-gallery"
+import AITextGenerator from "@/components/ai-text-generator"
+import SavedLettersGallery from "@/components/saved-letters-gallery"
+import IntelligentTranslator from "@/components/intelligent-translator"
 
 // Tipos para fuentes personalizadas
 interface CustomFont {
@@ -111,7 +133,6 @@ const translations = {
       none: "No pattern",
     },
   },
-  // Mantengo los otros idiomas del código original...
 }
 
 type Language = "es" | "en"
@@ -121,6 +142,8 @@ export default function LoveLetterGenerator() {
   const [currentLanguage, setCurrentLanguage] = useState<Language>("es")
   const [autoTranslate, setAutoTranslate] = useState(false)
   const [isTranslating, setIsTranslating] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false)
 
   const [letterData, setLetterData] = useState({
     to: translations.es.defaultTo,
@@ -146,25 +169,83 @@ export default function LoveLetterGenerator() {
   const letterRef = useRef<HTMLDivElement>(null)
   const t = translations[currentLanguage]
 
-  const handleExport = async (format: "png" | "jpg") => {
+  const handleExport = async (format: "png" | "jpg" | "pdf") => {
     if (!letterRef.current) return
 
     try {
-      const html2canvas = (await import("html2canvas")).default
-      const canvas = await html2canvas(letterRef.current, {
-        backgroundColor: design.backgroundColor,
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-      })
+      if (format === "pdf") {
+        // Implementar exportación a PDF
+        const jsPDF = (await import("jspdf")).default
+        const html2canvas = (await import("html2canvas")).default
 
-      const link = document.createElement("a")
-      link.download = `farllirs-love-letter.${format}`
-      link.href = canvas.toDataURL(`image/${format === "jpg" ? "jpeg" : "png"}`)
-      link.click()
+        const canvas = await html2canvas(letterRef.current, {
+          backgroundColor: design.backgroundColor,
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+        })
+
+        const imgData = canvas.toDataURL("image/png")
+        const pdf = new jsPDF()
+        const imgWidth = 210
+        const pageHeight = 295
+        const imgHeight = (canvas.height * imgWidth) / canvas.width
+        let heightLeft = imgHeight
+
+        let position = 0
+
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+
+        while (heightLeft >= 0) {
+          position = heightLeft - imgHeight
+          pdf.addPage()
+          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight)
+          heightLeft -= pageHeight
+        }
+
+        pdf.save(`farllirs-love-letter.pdf`)
+      } else {
+        const html2canvas = (await import("html2canvas")).default
+        const canvas = await html2canvas(letterRef.current, {
+          backgroundColor: design.backgroundColor,
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+        })
+
+        const link = document.createElement("a")
+        link.download = `farllirs-love-letter.${format}`
+        link.href = canvas.toDataURL(`image/${format === "jpg" ? "jpeg" : "png"}`)
+        link.click()
+      }
     } catch (error) {
       console.error("Error al exportar:", error)
     }
+  }
+
+  const generateQRCode = async () => {
+    try {
+      const QRCode = (await import("qrcode")).default
+      const letterContent = `${letterData.title}\n\nPara: ${letterData.to}\nDe: ${letterData.from}\n\n${letterData.message}`
+      const qrCodeDataURL = await QRCode.toDataURL(letterContent)
+
+      const link = document.createElement("a")
+      link.download = "farllirs-love-qr.png"
+      link.href = qrCodeDataURL
+      link.click()
+    } catch (error) {
+      console.error("Error generating QR code:", error)
+    }
+  }
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen)
+  }
+
+  const toggleMusic = () => {
+    setIsMusicPlaying(!isMusicPlaying)
+    // Aquí se implementaría la lógica de reproducción de música
   }
 
   const backgroundPatterns = {
@@ -298,44 +379,134 @@ export default function LoveLetterGenerator() {
     return <Heart className={className} style={style} fill="currentColor" />
   }
 
+  const handleTemplateSelect = (template: any) => {
+    setLetterData({
+      to: letterData.to,
+      from: letterData.from,
+      title: template.preview.title,
+      message: template.preview.message,
+    })
+    setDesign({
+      backgroundColor: template.preview.backgroundColor,
+      textColor: template.preview.textColor,
+      accentColor: template.preview.accentColor,
+      fontFamily: design.fontFamily,
+      backgroundPattern: template.preview.pattern,
+    })
+  }
+
+  const handleAITextGenerated = (text: string) => {
+    setLetterData({ ...letterData, message: text })
+  }
+
+  const handleLoadSavedLetter = (letter: any) => {
+    setLetterData({
+      to: letter.to,
+      from: letter.from,
+      title: letter.title,
+      message: letter.message,
+    })
+    setDesign(letter.design)
+  }
+
+  const handleTranslatedText = (text: string, field: string) => {
+    setLetterData({ ...letterData, [field]: text })
+  }
+
+  if (isFullscreen) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+        <div className="relative w-full h-full flex items-center justify-center p-8">
+          <Button onClick={toggleFullscreen} className="absolute top-4 right-4 z-10 bg-transparent" variant="outline">
+            Salir
+          </Button>
+          <div
+            className="w-full max-w-4xl aspect-[3/4] p-12 rounded-lg shadow-2xl transition-all duration-300 relative overflow-hidden"
+            style={{
+              backgroundColor: design.backgroundColor,
+              color: design.textColor,
+              fontFamily: fontFamilies[design.fontFamily as keyof typeof fontFamilies],
+              backgroundImage: backgroundPatterns[design.backgroundPattern as keyof typeof backgroundPatterns],
+              backgroundSize: "80px 80px",
+            }}
+          >
+            {/* Contenido de la carta en pantalla completa */}
+            <div className="text-center mb-8">
+              <div className="flex justify-center items-center gap-4 mb-6">
+                {renderIcon(selectedIcon, "w-12 h-12 animate-pulse", { color: design.accentColor })}
+                {renderIcon(selectedIcon, "w-8 h-8 animate-pulse delay-100", { color: design.accentColor })}
+                {renderIcon(selectedIcon, "w-12 h-12 animate-pulse delay-200", { color: design.accentColor })}
+              </div>
+              <h2 className="text-5xl font-bold mb-4" style={{ color: design.accentColor }}>
+                {letterData.title}
+              </h2>
+              <p className="text-2xl font-medium">
+                {t.to} {letterData.to}
+              </p>
+            </div>
+
+            <div className="flex-1 mb-8">
+              <div className="whitespace-pre-line text-xl leading-relaxed text-center">{letterData.message}</div>
+            </div>
+
+            <div className="text-right">
+              <p className="text-2xl font-medium">{t.withLove}</p>
+              <p className="text-3xl font-bold mt-4" style={{ color: design.accentColor }}>
+                {letterData.from}
+              </p>
+            </div>
+
+            <div className="flex justify-center mt-8">
+              {renderIcon(selectedIcon, "w-16 h-16 animate-bounce", { color: design.accentColor })}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900 transition-colors duration-300">
       {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-pink-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+      <header className="backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-pink-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               <div className="relative">
-                <Heart className="w-8 h-8 text-pink-500" fill="currentColor" />
-                <Sparkles className="w-4 h-4 text-purple-500 absolute -top-1 -right-1 animate-pulse" />
+                <Heart className="w-6 h-6 text-pink-500" fill="currentColor" />
+                <Sparkles className="w-3 h-3 text-purple-500 absolute -top-1 -right-1 animate-pulse" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
                   Farllirs Love
                 </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{t.subtitle}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">{t.subtitle}</p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
+              <Button variant="ghost" size="sm" onClick={toggleMusic} className="rounded-full">
+                {isMusicPlaying ? <Volume2 className="h-4 w-4 text-green-500" /> : <VolumeX className="h-4 w-4" />}
+              </Button>
+
               <Button
                 variant="ghost"
-                size="icon"
+                size="sm"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 className="rounded-full"
               >
-                <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
               </Button>
 
               <Select value={currentLanguage} onValueChange={(value: Language) => setCurrentLanguage(value)}>
-                <SelectTrigger className="w-32">
-                  <Globe className="w-4 h-4 mr-2" />
+                <SelectTrigger className="w-28">
+                  <Globe className="w-3 h-3 mr-1" />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="es">🇪🇸 Español</SelectItem>
-                  <SelectItem value="en">🇺🇸 English</SelectItem>
+                  <SelectItem value="es">🇪🇸 ES</SelectItem>
+                  <SelectItem value="en">🇺🇸 EN</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -343,19 +514,19 @@ export default function LoveLetterGenerator() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="grid lg:grid-cols-3 gap-4">
           {/* Panel de Edición */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4">
             {/* Contenido de la Carta */}
             <Card className="shadow-lg border-0 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Type className="w-5 h-5 text-pink-500" />
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Type className="w-4 h-4 text-pink-500" />
                   {t.content}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 <div className="grid grid-cols-1 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="to" className="text-sm font-medium">
@@ -366,7 +537,7 @@ export default function LoveLetterGenerator() {
                       value={letterData.to}
                       onChange={(e) => setLetterData({ ...letterData, to: e.target.value })}
                       placeholder={t.defaultTo}
-                      className="border-pink-200 focus:border-pink-400 dark:border-gray-600"
+                      className="border-pink-200 focus:border-pink-400 dark:border-gray-600 h-8"
                     />
                   </div>
                   <div className="space-y-2">
@@ -378,7 +549,7 @@ export default function LoveLetterGenerator() {
                       value={letterData.from}
                       onChange={(e) => setLetterData({ ...letterData, from: e.target.value })}
                       placeholder={t.defaultFrom}
-                      className="border-pink-200 focus:border-pink-400 dark:border-gray-600"
+                      className="border-pink-200 focus:border-pink-400 dark:border-gray-600 h-8"
                     />
                   </div>
                 </div>
@@ -392,7 +563,7 @@ export default function LoveLetterGenerator() {
                     value={letterData.title}
                     onChange={(e) => setLetterData({ ...letterData, title: e.target.value })}
                     placeholder={t.defaultTitle}
-                    className="border-pink-200 focus:border-pink-400 dark:border-gray-600"
+                    className="border-pink-200 focus:border-pink-400 dark:border-gray-600 h-8"
                   />
                 </div>
 
@@ -405,12 +576,28 @@ export default function LoveLetterGenerator() {
                     value={letterData.message}
                     onChange={(e) => setLetterData({ ...letterData, message: e.target.value })}
                     placeholder={t.defaultMessage}
-                    rows={6}
-                    className="border-pink-200 focus:border-pink-400 dark:border-gray-600 resize-none"
+                    rows={4}
+                    className="border-pink-200 focus:border-pink-400 dark:border-gray-600 resize-none text-sm"
                   />
                 </div>
               </CardContent>
             </Card>
+
+            {/* Plantillas */}
+            <TemplatesGallery onSelectTemplate={handleTemplateSelect} currentLanguage={currentLanguage} />
+
+            {/* Generador IA */}
+            <AITextGenerator onTextGenerated={handleAITextGenerated} currentLanguage={currentLanguage} />
+
+            {/* Traductor Inteligente */}
+            <IntelligentTranslator onTranslatedText={handleTranslatedText} currentLetter={letterData} />
+
+            {/* Cartas Guardadas */}
+            <SavedLettersGallery
+              onLoadLetter={handleLoadSavedLetter}
+              currentLetter={letterData}
+              currentDesign={design}
+            />
 
             {/* Personalización */}
             <Card className="shadow-lg border-0 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
@@ -568,6 +755,7 @@ export default function LoveLetterGenerator() {
                       </div>
                     </div>
                   </TabsContent>
+
                   <TabsContent value="icons" className="space-y-4">
                     <div className="space-y-3">
                       <Label className="text-sm font-medium">Iconos Predefinidos</Label>
@@ -689,72 +877,97 @@ export default function LoveLetterGenerator() {
                   <ImageIcon className="w-4 h-4 mr-2" />
                   {t.downloadJPG}
                 </Button>
+                <Button
+                  onClick={() => handleExport("pdf")}
+                  variant="outline"
+                  className="w-full border-purple-200 hover:bg-purple-50 dark:border-gray-600 dark:hover:bg-gray-700"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Descargar PDF
+                </Button>
+                <Button
+                  onClick={generateQRCode}
+                  variant="outline"
+                  className="w-full border-blue-200 hover:bg-blue-50 dark:border-gray-600 dark:hover:bg-gray-700 bg-transparent"
+                >
+                  <QrCode className="w-4 h-4 mr-2" />
+                  Generar QR
+                </Button>
               </CardContent>
             </Card>
           </div>
 
           {/* Vista Previa */}
           <div className="lg:col-span-2">
-            <Card className="shadow-2xl border-0 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm sticky top-24">
-              <CardHeader className="pb-4">
+            <Card className="shadow-2xl border-0 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+              <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Eye className="w-5 h-5 text-blue-500" />
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Eye className="w-4 h-4 text-blue-500" />
                     {t.preview}
                   </CardTitle>
-                  <Badge variant="secondary" className="bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300">
-                    Live Preview
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Button onClick={toggleFullscreen} variant="outline" size="sm">
+                      <Maximize className="w-3 h-3 mr-1" />
+                      Pantalla Completa
+                    </Button>
+                    <Badge
+                      variant="secondary"
+                      className="bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300 text-xs"
+                    >
+                      Live Preview
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="bg-white dark:bg-gray-100 rounded-xl p-4 shadow-inner">
+              <CardContent className="p-4">
+                <div className="bg-white dark:bg-gray-100 rounded-xl p-3 shadow-inner">
                   <div
                     ref={letterRef}
-                    className="w-full aspect-[3/4] p-8 rounded-lg shadow-lg transition-all duration-300 relative overflow-hidden"
+                    className="w-full aspect-[3/4] p-6 rounded-lg shadow-lg transition-all duration-300 relative overflow-hidden"
                     style={{
                       backgroundColor: design.backgroundColor,
                       color: design.textColor,
                       fontFamily: fontFamilies[design.fontFamily as keyof typeof fontFamilies],
                       backgroundImage: backgroundPatterns[design.backgroundPattern as keyof typeof backgroundPatterns],
-                      backgroundSize: "60px 60px",
+                      backgroundSize: "40px 40px",
                     }}
                   >
                     {/* Decoración superior */}
-                    <div className="text-center mb-6">
-                      <div className="flex justify-center items-center gap-2 mb-4">
-                        {renderIcon(selectedIcon, "w-6 h-6 animate-pulse", { color: design.accentColor })}
-                        {renderIcon(selectedIcon, "w-4 h-4 animate-pulse delay-100", { color: design.accentColor })}
-                        {renderIcon(selectedIcon, "w-6 h-6 animate-pulse delay-200", { color: design.accentColor })}
+                    <div className="text-center mb-4">
+                      <div className="flex justify-center items-center gap-2 mb-3">
+                        {renderIcon(selectedIcon, "w-5 h-5 animate-pulse", { color: design.accentColor })}
+                        {renderIcon(selectedIcon, "w-3 h-3 animate-pulse delay-100", { color: design.accentColor })}
+                        {renderIcon(selectedIcon, "w-5 h-5 animate-pulse delay-200", { color: design.accentColor })}
                       </div>
-                      <h2 className="text-2xl font-bold mb-2" style={{ color: design.accentColor }}>
+                      <h2 className="text-xl font-bold mb-2" style={{ color: design.accentColor }}>
                         {letterData.title}
                       </h2>
-                      <p className="text-lg font-medium">
+                      <p className="text-base font-medium">
                         {t.to} {letterData.to}
                       </p>
                     </div>
 
                     {/* Contenido de la carta */}
-                    <div className="flex-1 mb-6">
-                      <div className="whitespace-pre-line text-base leading-relaxed">{letterData.message}</div>
+                    <div className="flex-1 mb-4">
+                      <div className="whitespace-pre-line text-sm leading-relaxed">{letterData.message}</div>
                     </div>
 
                     {/* Firma */}
                     <div className="text-right">
-                      <p className="text-lg font-medium">{t.withLove}</p>
-                      <p className="text-xl font-bold mt-2" style={{ color: design.accentColor }}>
+                      <p className="text-base font-medium">{t.withLove}</p>
+                      <p className="text-lg font-bold mt-2" style={{ color: design.accentColor }}>
                         {letterData.from}
                       </p>
                     </div>
 
                     {/* Decoración inferior */}
-                    <div className="flex justify-center mt-6">
-                      {renderIcon(selectedIcon, "w-8 h-8 animate-bounce", { color: design.accentColor })}
+                    <div className="flex justify-center mt-4">
+                      {renderIcon(selectedIcon, "w-6 h-6 animate-bounce", { color: design.accentColor })}
                     </div>
 
                     {/* Marca de agua */}
-                    <div className="absolute bottom-2 right-2 opacity-30">
+                    <div className="absolute bottom-1 right-2 opacity-30">
                       <p className="text-xs font-medium">Farllirs Love</p>
                     </div>
                   </div>
@@ -765,17 +978,17 @@ export default function LoveLetterGenerator() {
         </div>
 
         {/* Footer */}
-        <footer className="mt-16 text-center py-8 border-t border-pink-200 dark:border-gray-700">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <Heart className="w-5 h-5 text-pink-500" fill="currentColor" />
-            <span className="text-lg font-semibold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+        <footer className="mt-8 text-center py-4 border-t border-pink-200 dark:border-gray-700">
+          <div className="flex items-center justify-center space-x-2 mb-2">
+            <Heart className="w-4 h-4 text-pink-500" fill="currentColor" />
+            <span className="text-base font-semibold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
               Farllirs Love
             </span>
           </div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
+          <p className="text-gray-600 dark:text-gray-400 text-xs">
             Creado con ❤️ para expresar amor de manera única y especial
           </p>
-          <div className="flex justify-center space-x-4 mt-4">
+          <div className="flex justify-center space-x-2 mt-2">
             <Badge variant="outline" className="text-xs">
               Responsive Design
             </Badge>
@@ -785,9 +998,22 @@ export default function LoveLetterGenerator() {
             <Badge variant="outline" className="text-xs">
               Multi-language
             </Badge>
+            <Badge variant="outline" className="text-xs">
+              AI Powered
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              Smart Translator
+            </Badge>
           </div>
         </footer>
       </div>
+
+      {/* Audio para música de fondo */}
+      {isMusicPlaying && (
+        <audio autoPlay loop className="hidden">
+          <source src="/romantic-music.mp3" type="audio/mpeg" />
+        </audio>
+      )}
     </div>
   )
 }
