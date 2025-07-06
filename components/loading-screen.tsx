@@ -44,8 +44,20 @@ export default function LoadingScreen() {
         {/* Logo animado */}
         <div className="relative">
           <div className="flex justify-center items-center space-x-2 mb-4">
-            <Heart className="w-16 h-16 text-pink-500 animate-pulse" fill="currentColor" />
-            <Sparkles className="w-8 h-8 text-purple-500 animate-bounce" />
+            {/* Nuevo icono personalizado */}
+            <div className="relative">
+              <img
+                src="/favicon.ico"
+                alt="Farllirs Love Icon"
+                className="w-16 h-16 animate-pulse"
+                style={{ imageRendering: "pixelated" }}
+              />
+              <Sparkles className="w-6 h-6 text-purple-500 animate-bounce absolute -top-2 -right-2" />
+            </div>
+
+            {/* Corazones decorativos */}
+            <Heart className="w-12 h-12 text-pink-500 animate-pulse delay-200" fill="currentColor" />
+            <Sparkles className="w-8 h-8 text-purple-500 animate-bounce delay-300" />
           </div>
 
           {/* Corazones flotantes */}
@@ -58,6 +70,14 @@ export default function LoadingScreen() {
           <div className="absolute -bottom-2 -left-6">
             <Heart className="w-5 h-5 text-purple-300 animate-float delay-1000" fill="currentColor" />
           </div>
+          <div className="absolute -bottom-4 -right-4">
+            <img
+              src="/favicon.ico"
+              alt="Farllirs Love Icon"
+              className="w-6 h-6 animate-float delay-700 opacity-60"
+              style={{ imageRendering: "pixelated" }}
+            />
+          </div>
         </div>
 
         {/* Título */}
@@ -66,6 +86,15 @@ export default function LoadingScreen() {
             Farllirs Love
           </h1>
           <p className="text-gray-600 dark:text-gray-300 text-lg">Generador de Cartas de Amor</p>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <img
+              src="/favicon.ico"
+              alt="Farllirs Love Icon"
+              className="w-4 h-4 opacity-70"
+              style={{ imageRendering: "pixelated" }}
+            />
+            <span className="text-sm text-gray-500 dark:text-gray-400">Powered by AI</span>
+          </div>
         </div>
 
         {/* Barra de progreso */}
@@ -76,6 +105,30 @@ export default function LoadingScreen() {
 
         {/* Porcentaje */}
         <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">{progress}%</div>
+
+        {/* Iconos decorativos adicionales */}
+        <div className="flex justify-center items-center gap-4 mt-6">
+          <img
+            src="/favicon.ico"
+            alt="Farllirs Love Icon"
+            className="w-8 h-8 animate-pulse delay-100 opacity-50"
+            style={{ imageRendering: "pixelated" }}
+          />
+          <Heart className="w-6 h-6 text-pink-400 animate-bounce delay-200" fill="currentColor" />
+          <img
+            src="/favicon.ico"
+            alt="Farllirs Love Icon"
+            className="w-8 h-8 animate-pulse delay-300 opacity-50"
+            style={{ imageRendering: "pixelated" }}
+          />
+          <Heart className="w-6 h-6 text-purple-400 animate-bounce delay-400" fill="currentColor" />
+          <img
+            src="/favicon.ico"
+            alt="Farllirs Love Icon"
+            className="w-8 h-8 animate-pulse delay-500 opacity-50"
+            style={{ imageRendering: "pixelated" }}
+          />
+        </div>
       </div>
     </div>
   )
