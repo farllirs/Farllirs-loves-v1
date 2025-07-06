@@ -1,0 +1,929 @@
+"use client"
+
+import { useState, useRef, useEffect } from "react"
+import { Download, Heart, Palette, Type, ImageIcon, Globe, Languages } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Switch } from "@/components/ui/switch"
+
+// Tipos para fuentes personalizadas
+interface CustomFont {
+  name: string
+  url: string
+  family: string
+}
+
+// Diccionarios de idiomas
+const translations = {
+  es: {
+    title: "Generador de Cartas de Amor",
+    subtitle: "Crea cartas de amor personalizadas y descárgalas como imagen",
+    content: "Contenido de la Carta",
+    to: "Para:",
+    from: "De:",
+    letterTitle: "Título:",
+    message: "Mensaje:",
+    customization: "Personalización",
+    colors: "Colores",
+    fonts: "Fuentes",
+    background: "Fondo",
+    backgroundColor: "Color de fondo:",
+    textColor: "Color del texto:",
+    accentColor: "Color de acento:",
+    fontFamily: "Familia de fuente:",
+    backgroundPattern: "Patrón de fondo:",
+    export: "Exportar",
+    downloadPNG: "Descargar PNG",
+    downloadJPG: "Descargar JPG",
+    preview: "Vista Previa",
+    language: "Idioma:",
+    autoTranslate: "Traducir automáticamente",
+    withLove: "Con amor,",
+    defaultTo: "Mi amor",
+    defaultFrom: "Tu admirador secreto",
+    defaultTitle: "Para ti, con todo mi amor",
+    defaultMessage:
+      "Querido/a [nombre],\n\nCada día que pasa me doy cuenta de lo afortunado/a que soy de tenerte en mi vida. Tu sonrisa ilumina mis días más oscuros y tu amor me da la fuerza para ser mejor persona.\n\nQuiero que sepas que eres lo más importante para mí, y que mi amor por ti crece cada día más.\n\nCon todo mi corazón,\n[Tu nombre]",
+    fontOptions: {
+      serif: "Serif (Clásica)",
+      sans: "Sans-serif (Moderna)",
+      script: "Script (Cursiva)",
+      elegant: "Elegant (Elegante)",
+    },
+    patternOptions: {
+      hearts: "Corazones",
+      roses: "Rosas",
+      stars: "Estrellas",
+      flowers: "Flores",
+      vintage: "Vintage",
+      dots: "Puntos",
+      none: "Sin patrón",
+    },
+  },
+  en: {
+    title: "Love Letter Generator",
+    subtitle: "Create personalized love letters and download them as images",
+    content: "Letter Content",
+    to: "To:",
+    from: "From:",
+    letterTitle: "Title:",
+    message: "Message:",
+    customization: "Customization",
+    colors: "Colors",
+    fonts: "Fonts",
+    background: "Background",
+    backgroundColor: "Background color:",
+    textColor: "Text color:",
+    accentColor: "Accent color:",
+    fontFamily: "Font family:",
+    backgroundPattern: "Background pattern:",
+    export: "Export",
+    downloadPNG: "Download PNG",
+    downloadJPG: "Download JPG",
+    preview: "Preview",
+    language: "Language:",
+    autoTranslate: "Auto translate",
+    withLove: "With love,",
+    defaultTo: "My love",
+    defaultFrom: "Your secret admirer",
+    defaultTitle: "For you, with all my love",
+    defaultMessage:
+      "Dear [name],\n\nEvery day that passes I realize how lucky I am to have you in my life. Your smile brightens my darkest days and your love gives me the strength to be a better person.\n\nI want you to know that you are the most important thing to me, and that my love for you grows stronger every day.\n\nWith all my heart,\n[Your name]",
+    fontOptions: {
+      serif: "Serif (Classic)",
+      sans: "Sans-serif (Modern)",
+      script: "Script (Cursive)",
+      elegant: "Elegant",
+    },
+    patternOptions: {
+      hearts: "Hearts",
+      roses: "Roses",
+      stars: "Stars",
+      flowers: "Flowers",
+      vintage: "Vintage",
+      dots: "Dots",
+      none: "No pattern",
+    },
+  },
+  fr: {
+    title: "Générateur de Lettres d'Amour",
+    subtitle: "Créez des lettres d'amour personnalisées et téléchargez-les en image",
+    content: "Contenu de la Lettre",
+    to: "À:",
+    from: "De:",
+    letterTitle: "Titre:",
+    message: "Message:",
+    customization: "Personalisation",
+    colors: "Couleurs",
+    fonts: "Polices",
+    background: "Arrière-plan",
+    backgroundColor: "Couleur d'arrière-plan:",
+    textColor: "Couleur du texte:",
+    accentColor: "Couleur d'accent:",
+    fontFamily: "Famille de police:",
+    backgroundPattern: "Motif d'arrière-plan:",
+    export: "Exporter",
+    downloadPNG: "Télécharger PNG",
+    downloadJPG: "Télécharger JPG",
+    preview: "Aperçu",
+    language: "Langue:",
+    autoTranslate: "Traduire automatiquement",
+    withLove: "Avec amour,",
+    defaultTo: "Mon amour",
+    defaultFrom: "Ton admirateur secret",
+    defaultTitle: "Pour toi, avec tout mon amour",
+    defaultMessage:
+      "Cher/Chère [nom],\n\nChaque jour qui passe, je réalise à quel point j'ai de la chance de t'avoir dans ma vie. Ton sourire illumine mes jours les plus sombres et ton amour me donne la force d'être une personne migliore.\n\nJe veux que tu saches que tu es ce qu'il y a de plus important pour moi, et que mon amour pour toi grandit chaque jour.\n\nDe tout mon cœur,\n[Ton nom]",
+    fontOptions: {
+      serif: "Serif (Classique)",
+      sans: "Sans-serif (Moderne)",
+      script: "Script (Cursive)",
+      elegant: "Élégant",
+    },
+    patternOptions: {
+      hearts: "Cœurs",
+      roses: "Roses",
+      stars: "Étoiles",
+      flowers: "Fleurs",
+      vintage: "Vintage",
+      dots: "Points",
+      none: "Aucun motif",
+    },
+  },
+  it: {
+    title: "Generatore di Lettere d'Amore",
+    subtitle: "Crea lettere d'amore personalizzate e scaricale come immagini",
+    content: "Contenuto della Lettera",
+    to: "A:",
+    from: "Da:",
+    letterTitle: "Titolo:",
+    message: "Messaggio:",
+    customization: "Personalizzazione",
+    colors: "Colori",
+    fonts: "Font",
+    background: "Sfondo",
+    backgroundColor: "Colore di sfondo:",
+    textColor: "Colore del testo:",
+    accentColor: "Colore di accento:",
+    fontFamily: "Famiglia di font:",
+    backgroundPattern: "Motivo di sfondo:",
+    export: "Esporta",
+    downloadPNG: "Scarica PNG",
+    downloadJPG: "Scarica JPG",
+    preview: "Anteprima",
+    language: "Idioma:",
+    autoTranslate: "Traduci automaticamente",
+    withLove: "Con amore,",
+    defaultTo: "Amore mio",
+    defaultFrom: "Il tuo ammiratore segreto",
+    defaultTitle: "Per te, con tutto il mio amore",
+    defaultMessage:
+      "Caro/a [nome],\n\nOgni giorno che passa mi rendo conto di quanto sono fortunato/a ad averti nella mia vita. Il tuo sorriso illumina i miei giorni più bui e il tuo amore mi dà la forza di essere una persona migliore.\n\nVoglio che tu sappia che sei la cosa più importante per me, e che il mio amore per te cresce ogni giorno di più.\n\nCon tutto il mio cuore,\n[Il tuo nome]",
+    fontOptions: {
+      serif: "Serif (Classico)",
+      sans: "Sans-serif (Moderno)",
+      script: "Script (Corsivo)",
+      elegant: "Elegante",
+    },
+    patternOptions: {
+      hearts: "Cuori",
+      roses: "Rose",
+      stars: "Stelle",
+      flowers: "Fiori",
+      vintage: "Vintage",
+      dots: "Ponti",
+      none: "Nessun motivo",
+    },
+  },
+  pt: {
+    title: "Gerador de Cartas de Amor",
+    subtitle: "Crie cartas de amor personalizadas e baixe-as como imagem",
+    content: "Conteúdo da Carta",
+    to: "Para:",
+    from: "De:",
+    letterTitle: "Título:",
+    message: "Mensagem:",
+    customization: "Personalização",
+    colors: "Cores",
+    fonts: "Fontes",
+    background: "Fundo",
+    backgroundColor: "Cor de fundo:",
+    textColor: "Cor do texto:",
+    accentColor: "Cor de destaque:",
+    fontFamily: "Famiglia da fonte:",
+    backgroundPattern: "Padrão de fundo:",
+    export: "Exportar",
+    downloadPNG: "Baixar PNG",
+    downloadJPG: "Baixar JPG",
+    preview: "Visualização",
+    language: "Idioma:",
+    autoTranslate: "Traduzir automaticamente",
+    withLove: "Com amor,",
+    defaultTo: "Meu amor",
+    defaultFrom: "Seu admirador secreto",
+    defaultTitle: "Para você, com todo o meu amor",
+    defaultMessage:
+      "Querido/a [nome],\n\nCada dia que passa eu percebo o quão sortudo/a sou por ter você na minha vida. Seu sorriso ilumina meus dias mais escuros e seu amor me dá força para ser uma pessoa melhor.\n\nQuero que você saiba que é a coisa mais importante para mim, e que meu amor por você cresce a cada dia.\n\nCom todo meu coração,\n[Seu nome]",
+    fontOptions: {
+      serif: "Serif (Clássica)",
+      sans: "Sans-serif (Moderna)",
+      script: "Script (Cursiva)",
+      elegant: "Elegante",
+    },
+    patternOptions: {
+      hearts: "Corações",
+      roses: "Rosas",
+      stars: "Estrelas",
+      flowers: "Flores",
+      vintage: "Vintage",
+      dots: "Pontos",
+      none: "Sem padrão",
+    },
+  },
+}
+
+// Simulación de API de traducción (en producción usarías Google Translate API, DeepL, etc.)
+const translateText = async (text: string, targetLang: string): Promise<string> => {
+  // Simulación de traducción - en producción conectarías con una API real
+  const translations: Record<string, Record<string, string>> = {
+    en: {
+      "Mi amor": "My love",
+      "Tu admirador secreto": "Your secret admirer",
+      "Para ti, con todo mi amor": "For you, with all my love",
+      "Con amor,": "With love,",
+    },
+    fr: {
+      "Mi amor": "Mon amour",
+      "Tu admirador secreto": "Ton admirateur secret",
+      "Para ti, con todo mi amor": "Pour toi, avec tout mon amour",
+      "Con amor,": "Avec amour,",
+    },
+    it: {
+      "Mi amor": "Amore mio",
+      "Tu admirador secreto": "Il tuo ammiratore segreto",
+      "Para ti, con todo il mio amore": "Per te, con tutto il mio amore",
+      "Con amor,": "Con amore,",
+    },
+    pt: {
+      "Mi amor": "Meu amor",
+      "Tu admirador secreto": "Seu admirador secreto",
+      "Para ti, con todo mi amor": "Para você, com todo o meu amor",
+      "Con amor,": "Com amor,",
+    },
+  }
+
+  // Simulación de delay de API
+  await new Promise((resolve) => setTimeout(resolve, 500))
+
+  return translations[targetLang]?.[text] || text
+}
+
+const loadCustomFont = async (file: File, setCustomFonts: any, setIsLoadingFont: any, setDesign: any) => {
+  if (!file.name.match(/\.(ttf|woff|woff2)$/i)) {
+    alert("Por favor selecciona un archivo de fuente válido (.ttf, .woff, .woff2)")
+    return
+  }
+
+  setIsLoadingFont(true)
+  try {
+    const url = URL.createObjectURL(file)
+    const fontName = file.name.replace(/\.(ttf|woff|woff2)$/i, "")
+    const fontFamily = `custom-${Date.now()}`
+
+    // Crear y cargar la fuente
+    const fontFace = new FontFace(fontFamily, `url(${url})`)
+    await fontFace.load()
+    document.fonts.add(fontFace)
+
+    const newFont: any = {
+      name: fontName,
+      url: url,
+      family: fontFamily,
+    }
+
+    setCustomFonts((prev: any) => [...prev, newFont])
+    setDesign((prev: any) => ({ ...prev, fontFamily: fontFamily }))
+  } catch (error) {
+    console.error("Error loading font:", error)
+    alert("Error al cargar la fuente")
+  }
+  setIsLoadingFont(false)
+}
+
+const loadCustomIcon = async (file: File, setCustomIcons: any, setIsLoadingIcon: any, setSelectedIcon: any) => {
+  if (!file.type.startsWith("image/")) {
+    alert("Por favor selecciona un archivo de imagen válido")
+    return
+  }
+
+  setIsLoadingIcon(true)
+  try {
+    const url = URL.createObjectURL(file)
+    const iconName = file.name.replace(/\.(jpg|jpeg|png|gif|svg|webp)$/i, "")
+    const iconId = `custom-${Date.now()}`
+
+    const newIcon = {
+      id: iconId,
+      name: iconName,
+      url: url,
+      type: "custom",
+    }
+
+    setCustomIcons((prev) => [...prev, newIcon])
+    setSelectedIcon(iconId)
+  } catch (error) {
+    console.error("Error loading icon:", error)
+    alert("Error al cargar el icono")
+  }
+  setIsLoadingIcon(false)
+}
+
+type Language = "es" | "en" | "fr" | "it" | "pt"
+
+export default function LoveLetterGenerator() {
+  const [currentLanguage, setCurrentLanguage] = useState<Language>("es")
+  const [autoTranslate, setAutoTranslate] = useState(false)
+  const [isTranslating, setIsTranslating] = useState(false)
+
+  const [letterData, setLetterData] = useState({
+    to: translations.es.defaultTo,
+    from: translations.es.defaultFrom,
+    title: translations.es.defaultTitle,
+    message: translations.es.defaultMessage,
+  })
+
+  const [design, setDesign] = useState({
+    backgroundColor: "#fef7f0",
+    textColor: "#8b5a3c",
+    accentColor: "#e91e63",
+    fontFamily: "serif",
+    backgroundPattern: "hearts",
+  })
+
+  const [customFonts, setCustomFonts] = useState<any[]>([])
+  const [isLoadingFont, setIsLoadingFont] = useState(false)
+  const [customIcons, setCustomIcons] = useState<any[]>([])
+  const [selectedIcon, setSelectedIcon] = useState("heart")
+  const [isLoadingIcon, setIsLoadingIcon] = useState(false)
+
+  const letterRef = useRef<HTMLDivElement>(null)
+  const t = translations[currentLanguage]
+
+  // Efecto para cambiar el idioma y traducir automáticamente
+  useEffect(() => {
+    const changeLanguage = async () => {
+      if (autoTranslate && currentLanguage !== "es") {
+        setIsTranslating(true)
+        try {
+          const translatedTo = await translateText(letterData.to, currentLanguage)
+          const translatedFrom = await translateText(letterData.from, currentLanguage)
+          const translatedTitle = await translateText(letterData.title, currentLanguage)
+
+          setLetterData((prev) => ({
+            ...prev,
+            to: translatedTo,
+            from: translatedFrom,
+            title: translatedTitle,
+            message: translations[currentLanguage].defaultMessage,
+          }))
+        } catch (error) {
+          console.error("Translation error:", error)
+        }
+        setIsTranslating(false)
+      } else {
+        // Usar plantillas predefinidas
+        setLetterData({
+          to: translations[currentLanguage].defaultTo,
+          from: translations[currentLanguage].defaultFrom,
+          title: translations[currentLanguage].defaultTitle,
+          message: translations[currentLanguage].defaultMessage,
+        })
+      }
+    }
+
+    changeLanguage()
+  }, [currentLanguage, autoTranslate])
+
+  const handleExport = async (format: "png" | "jpg") => {
+    if (!letterRef.current) return
+
+    try {
+      const html2canvas = (await import("html2canvas")).default
+      const canvas = await html2canvas(letterRef.current, {
+        backgroundColor: design.backgroundColor,
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+      })
+
+      const link = document.createElement("a")
+      link.download = `love-letter.${format}`
+      link.href = canvas.toDataURL(`image/${format === "jpg" ? "jpeg" : "png"}`)
+      link.click()
+    } catch (error) {
+      console.error("Error al exportar:", error)
+    }
+  }
+
+  const backgroundPatterns = {
+    hearts:
+      "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%23f8bbd9' fillOpacity='0.1'%3E%3Cpath d='M30 30c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20zm15-15c0-5.523-4.477-10-10-10s-10 4.477-10 10 4.477 10 10 10 10-4.477 10-10z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+    roses:
+      "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23fce4ec' fillOpacity='0.1'%3E%3Ccircle cx='20' cy='20' r='4'/%3E%3Ccircle cx='5' cy='5' r='2'/%3E%3Ccircle cx='35' cy='5' r='2'/%3E%3Ccircle cx='5' cy='35' r='2'/%3E%3Ccircle cx='35' cy='35' r='2'/%3E%3C/g%3E%3C/svg%3E\")",
+    stars:
+      "url(\"data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffd700' fillOpacity='0.08'%3E%3Cpolygon points='25,5 30,20 45,20 33,30 38,45 25,35 12,45 17,30 5,20 20,20'/%3E%3C/g%3E%3C/svg%3E\")",
+    flowers:
+      "url(\"data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ff69b4' fillOpacity='0.06'%3E%3Ccircle cx='40' cy='40' r='3'/%3E%3Ccircle cx='25' cy='25' r='8'/%3E%3Ccircle cx='55' cy='25' r='8'/%3E%3Ccircle cx='25' cy='55' r='8'/%3E%3Ccircle cx='55' cy='55' r='8'/%3E%3C/g%3E%3C/svg%3E\")",
+    vintage:
+      "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23d4af37' fillOpacity='0.05'%3E%3Cpath d='M50 10 L60 40 L90 40 L68 58 L78 88 L50 70 L22 88 L32 58 L10 40 L40 40 Z'/%3E%3C/g%3E%3C/svg%3E\")",
+    dots: "url(\"data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ff1744' fillOpacity='0.08'%3E%3Ccircle cx='15' cy='15' r='2'/%3E%3Ccircle cx='5' cy='5' r='1'/%3E%3Ccircle cx='25' cy='5' r='1'/%3E%3Ccircle cx='5' cy='25' r='1'/%3E%3Ccircle cx='25' cy='25' r='1'/%3E%3C/g%3E%3C/svg%3E\")",
+    none: "none",
+  }
+
+  const fontFamilies = {
+    serif: "Georgia, serif",
+    sans: "Inter, sans-serif",
+    script: "Dancing Script, cursive",
+    elegant: "Playfair Display, serif",
+    ...Object.fromEntries(customFonts.map((font) => [font.family, font.family])),
+  }
+
+  const languageOptions = [
+    { code: "es", name: "Español", flag: "🇪🇸" },
+    { code: "en", name: "English", flag: "🇺🇸" },
+    { code: "fr", name: "Français", flag: "🇫🇷" },
+    { code: "it", name: "Italiano", flag: "🇮🇹" },
+    { code: "pt", name: "Português", flag: "🇵🇹" },
+  ]
+
+  const predefinedIcons = [
+    { id: "heart", name: "Corazón", component: Heart },
+    { id: "star", name: "Estrella", component: () => <div className="text-2xl">⭐</div> },
+    { id: "flower", name: "Flor", component: () => <div className="text-2xl">🌸</div> },
+    { id: "butterfly", name: "Mariposa", component: () => <div className="text-2xl">🦋</div> },
+    { id: "diamond", name: "Diamante", component: () => <div className="text-2xl">💎</div> },
+    { id: "rose", name: "Rosa", component: () => <div className="text-2xl">🌹</div> },
+    { id: "kiss", name: "Beso", component: () => <div className="text-2xl">💋</div> },
+    { id: "ring", name: "Anillo", component: () => <div className="text-2xl">💍</div> },
+  ]
+
+  const renderIcon = (iconId: string, className = "", style: any = {}) => {
+    // Buscar en iconos personalizados
+    const customIcon = customIcons.find((icon) => icon.id === iconId)
+    if (customIcon) {
+      return (
+        <img
+          src={customIcon.url || "/placeholder.svg"}
+          alt={customIcon.name}
+          className={`${className} object-contain`}
+          style={style}
+        />
+      )
+    }
+
+    // Buscar en iconos predefinidos
+    const predefinedIcon = predefinedIcons.find((icon) => icon.id === iconId)
+    if (predefinedIcon) {
+      const IconComponent = predefinedIcon.component
+      return <IconComponent className={className} style={style} fill="currentColor" />
+    }
+
+    // Fallback a corazón
+    return <Heart className={className} style={style} fill="currentColor" />
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-red-50 p-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-2">
+            <Heart className="text-red-500" />
+            {t.title}
+          </h1>
+          <p className="text-gray-600">{t.subtitle}</p>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Panel de Edición */}
+          <div className="space-y-6">
+            {/* Selector de Idioma */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="w-5 h-5" />
+                  {t.language}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <Select value={currentLanguage} onValueChange={(value: Language) => setCurrentLanguage(value)}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {languageOptions.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          <span className="flex items-center gap-2">
+                            <span>{lang.flag}</span>
+                            <span>{lang.name}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch id="auto-translate" checked={autoTranslate} onCheckedChange={setAutoTranslate} />
+                  <Label htmlFor="auto-translate" className="flex items-center gap-2">
+                    <Languages className="w-4 h-4" />
+                    {t.autoTranslate}
+                  </Label>
+                  {isTranslating && <span className="text-sm text-gray-500">Traduciendo...</span>}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Type className="w-5 h-5" />
+                  {t.content}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="to">{t.to}</Label>
+                    <Input
+                      id="to"
+                      value={letterData.to}
+                      onChange={(e) => setLetterData({ ...letterData, to: e.target.value })}
+                      placeholder={t.defaultTo}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="from">{t.from}</Label>
+                    <Input
+                      id="from"
+                      value={letterData.from}
+                      onChange={(e) => setLetterData({ ...letterData, from: e.target.value })}
+                      placeholder={t.defaultFrom}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="title">{t.letterTitle}</Label>
+                  <Input
+                    id="title"
+                    value={letterData.title}
+                    onChange={(e) => setLetterData({ ...letterData, title: e.target.value })}
+                    placeholder={t.defaultTitle}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="message">{t.message}</Label>
+                  <Textarea
+                    id="message"
+                    value={letterData.message}
+                    onChange={(e) => setLetterData({ ...letterData, message: e.target.value })}
+                    placeholder={t.defaultMessage}
+                    rows={8}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="w-5 h-5" />
+                  {t.customization}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="colors" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="colors">{t.colors}</TabsTrigger>
+                    <TabsTrigger value="fonts">{t.fonts}</TabsTrigger>
+                    <TabsTrigger value="background">{t.background}</TabsTrigger>
+                    <TabsTrigger value="icons">Iconos</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="colors" className="space-y-4">
+                    <div>
+                      <Label>{t.backgroundColor}</Label>
+                      <div className="flex gap-2 mt-2">
+                        {["#fef7f0", "#fce4ec", "#f3e5f5", "#e8f5e8", "#fff3e0"].map((color) => (
+                          <button
+                            key={color}
+                            className="w-8 h-8 rounded-full border-2 border-gray-300 hover:scale-110 transition-transform"
+                            style={{ backgroundColor: color }}
+                            onClick={() => setDesign({ ...design, backgroundColor: color })}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>{t.textColor}</Label>
+                      <div className="flex gap-2 mt-2">
+                        {["#8b5a3c", "#4a4a4a", "#6a1b9a", "#2e7d32", "#d84315"].map((color) => (
+                          <button
+                            key={color}
+                            className="w-8 h-8 rounded-full border-2 border-gray-300 hover:scale-110 transition-transform"
+                            style={{ backgroundColor: color }}
+                            onClick={() => setDesign({ ...design, textColor: color })}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>{t.accentColor}</Label>
+                      <div className="flex gap-2 mt-2">
+                        {["#e91e63", "#f44336", "#9c27b0", "#4caf50", "#ff9800"].map((color) => (
+                          <button
+                            key={color}
+                            className="w-8 h-8 rounded-full border-2 border-gray-300 hover:scale-110 transition-transform"
+                            style={{ backgroundColor: color }}
+                            onClick={() => setDesign({ ...design, accentColor: color })}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="fonts" className="space-y-4">
+                    <div>
+                      <Label>{t.fontFamily}</Label>
+                      <Select
+                        value={design.fontFamily}
+                        onValueChange={(value) => setDesign({ ...design, fontFamily: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="serif">{t.fontOptions.serif}</SelectItem>
+                          <SelectItem value="sans">{t.fontOptions.sans}</SelectItem>
+                          <SelectItem value="script">{t.fontOptions.script}</SelectItem>
+                          <SelectItem value="elegant">{t.fontOptions.elegant}</SelectItem>
+                          {customFonts.map((font) => (
+                            <SelectItem key={font.family} value={font.family}>
+                              {font.name} (Personalizada)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Cargar Fuente Personalizada</Label>
+                      <div className="mt-2">
+                        <input
+                          type="file"
+                          accept=".ttf,.woff,.woff2"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) loadCustomFont(file, setCustomFonts, setIsLoadingFont, setDesign)
+                          }}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
+                          disabled={isLoadingFont}
+                        />
+                        {isLoadingFont && <p className="text-sm text-gray-500 mt-1">Cargando fuente...</p>}
+                        <p className="text-xs text-gray-400 mt-1">Formatos soportados: .ttf, .woff, .woff2</p>
+                      </div>
+                    </div>
+
+                    {customFonts.length > 0 && (
+                      <div>
+                        <Label>Fuentes Personalizadas Cargadas</Label>
+                        <div className="mt-2 space-y-1">
+                          {customFonts.map((font, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded"
+                            >
+                              <span>{font.name}</span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setCustomFonts((prev) => prev.filter((_, i) => i !== index))
+                                  if (design.fontFamily === font.family) {
+                                    setDesign((prev) => ({ ...prev, fontFamily: "serif" }))
+                                  }
+                                }}
+                              >
+                                ✕
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="background" className="space-y-4">
+                    <div>
+                      <Label>{t.backgroundPattern}</Label>
+                      <Select
+                        value={design.backgroundPattern}
+                        onValueChange={(value) => setDesign({ ...design, backgroundPattern: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="hearts">{t.patternOptions.hearts}</SelectItem>
+                          <SelectItem value="roses">{t.patternOptions.roses}</SelectItem>
+                          <SelectItem value="stars">{t.patternOptions.stars}</SelectItem>
+                          <SelectItem value="flowers">{t.patternOptions.flowers}</SelectItem>
+                          <SelectItem value="vintage">{t.patternOptions.vintage}</SelectItem>
+                          <SelectItem value="dots">{t.patternOptions.dots}</SelectItem>
+                          <SelectItem value="none">{t.patternOptions.none}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="icons" className="space-y-4">
+                    <div>
+                      <Label>Iconos Predefinidos</Label>
+                      <div className="grid grid-cols-4 gap-2 mt-2">
+                        {predefinedIcons.map((icon) => (
+                          <button
+                            key={icon.id}
+                            className={`p-3 rounded-lg border-2 transition-all hover:scale-105 ${
+                              selectedIcon === icon.id
+                                ? "border-pink-500 bg-pink-50"
+                                : "border-gray-200 hover:border-pink-300"
+                            }`}
+                            onClick={() => setSelectedIcon(icon.id)}
+                          >
+                            <div className="flex flex-col items-center gap-1">
+                              <icon.component className="w-6 h-6" />
+                              <span className="text-xs">{icon.name}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Cargar Icono Personalizado</Label>
+                      <div className="mt-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) loadCustomIcon(file, setCustomIcons, setIsLoadingIcon, setSelectedIcon)
+                          }}
+                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
+                          disabled={isLoadingIcon}
+                        />
+                        {isLoadingIcon && <p className="text-sm text-gray-500 mt-1">Cargando icono...</p>}
+                        <p className="text-xs text-gray-400 mt-1">Formatos soportados: JPG, PNG, GIF, SVG, WebP</p>
+                      </div>
+                    </div>
+
+                    {customIcons.length > 0 && (
+                      <div>
+                        <Label>Iconos Personalizados</Label>
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                          {customIcons.map((icon) => (
+                            <div key={icon.id} className="relative">
+                              <button
+                                className={`w-full p-3 rounded-lg border-2 transition-all hover:scale-105 ${
+                                  selectedIcon === icon.id
+                                    ? "border-pink-500 bg-pink-50"
+                                    : "border-gray-200 hover:border-pink-300"
+                                }`}
+                                onClick={() => setSelectedIcon(icon.id)}
+                              >
+                                <div className="flex flex-col items-center gap-1">
+                                  <img
+                                    src={icon.url || "/placeholder.svg"}
+                                    alt={icon.name}
+                                    className="w-8 h-8 object-contain"
+                                  />
+                                  <span className="text-xs truncate w-full">{icon.name}</span>
+                                </div>
+                              </button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="absolute -top-2 -right-2 w-6 h-6 p-0 bg-red-500 text-white rounded-full hover:bg-red-600"
+                                onClick={() => {
+                                  setCustomIcons((prev) => prev.filter((i) => i.id !== icon.id))
+                                  if (selectedIcon === icon.id) {
+                                    setSelectedIcon("heart")
+                                  }
+                                }}
+                              >
+                                ✕
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Download className="w-5 h-5" />
+                  {t.export}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex gap-4">
+                <Button onClick={() => handleExport("png")} className="flex-1">
+                  <ImageIcon className="w-4 h-4 mr-2" />
+                  {t.downloadPNG}
+                </Button>
+                <Button onClick={() => handleExport("jpg")} variant="outline" className="flex-1">
+                  <ImageIcon className="w-4 h-4 mr-2" />
+                  {t.downloadJPG}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Vista Previa */}
+          <div className="lg:sticky lg:top-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t.preview}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div
+                  ref={letterRef}
+                  className="w-full aspect-[3/4] p-8 rounded-lg shadow-lg transition-all duration-300"
+                  style={{
+                    backgroundColor: design.backgroundColor,
+                    color: design.textColor,
+                    fontFamily: fontFamilies[design.fontFamily as keyof typeof fontFamilies],
+                    backgroundImage: backgroundPatterns[design.backgroundPattern as keyof typeof backgroundPatterns],
+                    backgroundSize: "60px 60px",
+                  }}
+                >
+                  {/* Decoración superior */}
+                  <div className="text-center mb-6">
+                    <div className="flex justify-center items-center gap-2 mb-4">
+                      {renderIcon(selectedIcon, "w-6 h-6 animate-pulse", { color: design.accentColor })}
+                      {renderIcon(selectedIcon, "w-4 h-4 animate-pulse delay-100", { color: design.accentColor })}
+                      {renderIcon(selectedIcon, "w-6 h-6 animate-pulse delay-200", { color: design.accentColor })}
+                    </div>
+                    <h2 className="text-2xl font-bold mb-2" style={{ color: design.accentColor }}>
+                      {letterData.title}
+                    </h2>
+                    <p className="text-lg font-medium">
+                      {t.to} {letterData.to}
+                    </p>
+                  </div>
+
+                  {/* Contenido de la carta */}
+                  <div className="flex-1 mb-6">
+                    <div className="whitespace-pre-line text-base leading-relaxed">{letterData.message}</div>
+                  </div>
+
+                  {/* Firma */}
+                  <div className="text-right">
+                    <p className="text-lg font-medium">{t.withLove}</p>
+                    <p className="text-xl font-bold mt-2" style={{ color: design.accentColor }}>
+                      {letterData.from}
+                    </p>
+                  </div>
+
+                  {/* Decoración inferior */}
+                  <div className="flex justify-center mt-6">
+                    {renderIcon(selectedIcon, "w-8 h-8 animate-bounce", { color: design.accentColor })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="mt-12 text-center py-6 border-t border-pink-200">
+          <p className="text-gray-600 text-sm">
+            Creada con ❤️ por <span className="font-semibold text-pink-600">farllirs</span>
+          </p>
+        </footer>
+      </div>
+    </div>
+  )
+}
