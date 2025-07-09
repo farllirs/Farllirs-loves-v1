@@ -144,6 +144,7 @@ export default function LoveLetterGenerator() {
   const [isTranslating, setIsTranslating] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isMusicPlaying, setIsMusicPlaying] = useState(false)
+  const [selectedIconCategory, setSelectedIconCategory] = useState("todos")
 
   const [letterData, setLetterData] = useState({
     to: translations.es.defaultTo,
@@ -157,8 +158,77 @@ export default function LoveLetterGenerator() {
     textColor: "#8b5a3c",
     accentColor: "#e91e63",
     fontFamily: "serif",
+    fontSize: "base",
     backgroundPattern: "hearts",
+    cardSize: "standard", // Nuevo campo para el tamaño
+    aspectRatio: "3/4", // Nuevo campo para el aspect ratio
   })
+
+  const cardSizes = {
+    compact: {
+      name: "Compacta",
+      ratio: "4/5",
+      description: "Ideal para mensajes cortos",
+      scale: 0.8,
+      padding: "p-4",
+      iconScale: 0.8,
+      titleScale: 0.9,
+    },
+    standard: {
+      name: "Estándar",
+      ratio: "3/4",
+      description: "Tamaño clásico de carta",
+      scale: 1.0,
+      padding: "p-6",
+      iconScale: 1.0,
+      titleScale: 1.0,
+    },
+    letter: {
+      name: "Carta",
+      ratio: "8.5/11",
+      description: "Formato carta tradicional",
+      scale: 1.2,
+      padding: "p-8",
+      iconScale: 1.1,
+      titleScale: 1.1,
+    },
+    square: {
+      name: "Cuadrada",
+      ratio: "1/1",
+      description: "Formato cuadrado moderno",
+      scale: 0.9,
+      padding: "p-5",
+      iconScale: 0.9,
+      titleScale: 0.95,
+    },
+    wide: {
+      name: "Panorámica",
+      ratio: "16/9",
+      description: "Formato horizontal amplio",
+      scale: 1.1,
+      padding: "p-6",
+      iconScale: 1.0,
+      titleScale: 1.05,
+    },
+    postcard: {
+      name: "Postal",
+      ratio: "3/2",
+      description: "Estilo postal vintage",
+      scale: 0.85,
+      padding: "p-4",
+      iconScale: 0.85,
+      titleScale: 0.9,
+    },
+  }
+
+  const fontSizes = {
+    xs: { name: "Muy Pequeña", class: "text-xs", preview: "12px" },
+    sm: { name: "Pequeña", class: "text-sm", preview: "14px" },
+    base: { name: "Normal", class: "text-base", preview: "16px" },
+    lg: { name: "Grande", class: "text-lg", preview: "18px" },
+    xl: { name: "Muy Grande", class: "text-xl", preview: "20px" },
+    "2xl": { name: "Extra Grande", class: "text-2xl", preview: "24px" },
+  }
 
   const [customFonts, setCustomFonts] = useState<any[]>([])
   const [isLoadingFont, setIsLoadingFont] = useState(false)
@@ -272,18 +342,26 @@ export default function LoveLetterGenerator() {
   }
 
   const predefinedIcons = [
-    { id: "heart", name: "Corazón", component: Heart },
-    { id: "star", name: "Estrella", component: Star },
-    { id: "sparkles", name: "Brillos", component: Sparkles },
-    { id: "flower", name: "Flor", emoji: "🌸" },
-    { id: "rose", name: "Rosa", emoji: "🌹" },
-    { id: "butterfly", name: "Mariposa", emoji: "🦋" },
-    { id: "diamond", name: "Diamante", emoji: "💎" },
-    { id: "kiss", name: "Beso", emoji: "💋" },
-    { id: "ring", name: "Anillo", emoji: "💍" },
-    { id: "cupid", name: "Cupido", emoji: "💘" },
-    { id: "gift", name: "Regalo", emoji: "🎁" },
-    { id: "balloon", name: "Globo", emoji: "🎈" },
+    { id: "heart", name: "Corazón", component: Heart, category: "amor" },
+    { id: "star", name: "Estrella", component: Star, category: "celebración" },
+    { id: "sparkles", name: "Brillos", component: Sparkles, category: "celebración" },
+    { id: "flower", name: "Flor", emoji: "🌸", category: "naturaleza" },
+    { id: "rose", name: "Rosa", emoji: "🌹", category: "amor" },
+    { id: "butterfly", name: "Mariposa", emoji: "🦋", category: "naturaleza" },
+    { id: "diamond", name: "Diamante", emoji: "💎", category: "lujo" },
+    { id: "kiss", name: "Beso", emoji: "💋", category: "amor" },
+    { id: "ring", name: "Anillo", emoji: "💍", category: "amor" },
+    { id: "cupid", name: "Cupido", emoji: "💘", category: "amor" },
+    { id: "gift", name: "Regalo", emoji: "🎁", category: "celebración" },
+    { id: "balloon", name: "Globo", emoji: "🎈", category: "celebración" },
+    { id: "cake", name: "Pastel", emoji: "🎂", category: "celebración" },
+    { id: "champagne", name: "Champán", emoji: "🥂", category: "celebración" },
+    { id: "moon", name: "Luna", emoji: "🌙", category: "romántico" },
+    { id: "sun", name: "Sol", emoji: "☀️", category: "naturaleza" },
+    { id: "rainbow", name: "Arcoíris", emoji: "🌈", category: "naturaleza" },
+    { id: "fire", name: "Fuego", emoji: "🔥", category: "pasión" },
+    { id: "crown", name: "Corona", emoji: "👑", category: "lujo" },
+    { id: "key", name: "Llave", emoji: "🗝️", category: "romántico" },
   ]
 
   const loadCustomFont = async (file: File) => {
@@ -346,6 +424,29 @@ export default function LoveLetterGenerator() {
     setIsLoadingIcon(false)
   }
 
+  const getDynamicStyles = () => {
+    const currentSize = cardSizes[design.cardSize as keyof typeof cardSizes]
+    const baseScale = currentSize.scale
+    const fontScale = fontSizes[design.fontSize as keyof typeof fontSizes]
+
+    return {
+      titleSize: `${1.5 * baseScale * currentSize.titleScale}rem`,
+      subtitleSize: `${1.1 * baseScale}rem`,
+      bodySize: `${1 * baseScale}rem`,
+      signatureSize: `${1.2 * baseScale}rem`,
+      iconSize: `${1.5 * baseScale * currentSize.iconScale}rem`,
+      decorativeIconSize: `${1 * baseScale * currentSize.iconScale}rem`,
+      bounceIconSize: `${2 * baseScale * currentSize.iconScale}rem`,
+      spacing: {
+        mb4: `${1 * baseScale}rem`,
+        mb6: `${1.5 * baseScale}rem`,
+        mb8: `${2 * baseScale}rem`,
+        gap: `${0.5 * baseScale}rem`,
+      },
+      backgroundSize: `${40 * baseScale}px ${40 * baseScale}px`,
+    }
+  }
+
   const renderIcon = (iconId: string, className = "", style: any = {}) => {
     // Buscar en iconos personalizados
     const customIcon = customIcons.find((icon) => icon.id === iconId)
@@ -355,7 +456,11 @@ export default function LoveLetterGenerator() {
           src={customIcon.url || "/placeholder.svg"}
           alt={customIcon.name}
           className={`${className} object-contain`}
-          style={style}
+          style={{
+            width: style.width || "1.5rem",
+            height: style.height || "1.5rem",
+            ...style,
+          }}
         />
       )
     }
@@ -365,18 +470,47 @@ export default function LoveLetterGenerator() {
     if (predefinedIcon) {
       if (predefinedIcon.emoji) {
         return (
-          <span className={className} style={{ fontSize: "1.5em", ...style }}>
+          <span
+            className={className}
+            style={{
+              fontSize: style.fontSize || "1.5em",
+              width: style.width,
+              height: style.height,
+              display: "inline-block",
+              ...style,
+            }}
+          >
             {predefinedIcon.emoji}
           </span>
         )
       } else {
         const IconComponent = predefinedIcon.component
-        return <IconComponent className={className} style={style} fill="currentColor" />
+        return (
+          <IconComponent
+            className={className}
+            style={{
+              width: style.width || "1.5rem",
+              height: style.height || "1.5rem",
+              ...style,
+            }}
+            fill="currentColor"
+          />
+        )
       }
     }
 
     // Fallback a corazón
-    return <Heart className={className} style={style} fill="currentColor" />
+    return (
+      <Heart
+        className={className}
+        style={{
+          width: style.width || "1.5rem",
+          height: style.height || "1.5rem",
+          ...style,
+        }}
+        fill="currentColor"
+      />
+    )
   }
 
   const handleTemplateSelect = (template: any) => {
@@ -391,7 +525,10 @@ export default function LoveLetterGenerator() {
       textColor: template.preview.textColor,
       accentColor: template.preview.accentColor,
       fontFamily: design.fontFamily,
+      fontSize: design.fontSize,
       backgroundPattern: template.preview.pattern,
+      cardSize: design.cardSize,
+      aspectRatio: design.aspectRatio,
     })
   }
 
@@ -609,7 +746,10 @@ export default function LoveLetterGenerator() {
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="colors" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 mb-4">
+                  <TabsList className="grid w-full grid-cols-5 mb-4">
+                    <TabsTrigger value="size" className="text-xs">
+                      Tamaño
+                    </TabsTrigger>
                     <TabsTrigger value="colors" className="text-xs">
                       Colores
                     </TabsTrigger>
@@ -623,6 +763,31 @@ export default function LoveLetterGenerator() {
                       Iconos
                     </TabsTrigger>
                   </TabsList>
+
+                  <TabsContent value="size" className="space-y-4">
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Tamaño de la carta</Label>
+                      <div className="grid grid-cols-1 gap-2">
+                        {Object.entries(cardSizes).map(([key, size]) => (
+                          <button
+                            key={key}
+                            className={`p-3 rounded-lg border-2 transition-all text-left ${
+                              design.cardSize === key
+                                ? "border-pink-500 bg-pink-50 dark:bg-pink-900/20"
+                                : "border-gray-200 hover:border-pink-300 dark:border-gray-600"
+                            }`}
+                            onClick={() => setDesign({ ...design, cardSize: key, aspectRatio: size.ratio })}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-medium text-sm">{size.name}</span>
+                              <span className="text-xs text-gray-500">{size.ratio}</span>
+                            </div>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">{size.description}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
 
                   <TabsContent value="colors" className="space-y-4">
                     <div className="space-y-3">
@@ -659,7 +824,7 @@ export default function LoveLetterGenerator() {
 
                   <TabsContent value="fonts" className="space-y-4">
                     <div className="space-y-3">
-                      <Label className="text-sm font-medium">{t.fontFamily}</Label>
+                      <Label className="text-sm font-medium">Familia de fuente</Label>
                       <Select
                         value={design.fontFamily}
                         onValueChange={(value) => setDesign({ ...design, fontFamily: value })}
@@ -679,6 +844,26 @@ export default function LoveLetterGenerator() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Tamaño de fuente</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(fontSizes).map(([key, size]) => (
+                          <button
+                            key={key}
+                            className={`p-2 rounded-lg border-2 transition-all text-left ${
+                              design.fontSize === key
+                                ? "border-pink-500 bg-pink-50 dark:bg-pink-900/20"
+                                : "border-gray-200 hover:border-pink-300 dark:border-gray-600"
+                            }`}
+                            onClick={() => setDesign({ ...design, fontSize: key })}
+                          >
+                            <div className="text-sm font-medium">{size.name}</div>
+                            <div className="text-xs text-gray-500">{size.preview}</div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="space-y-3">
@@ -758,28 +943,48 @@ export default function LoveLetterGenerator() {
 
                   <TabsContent value="icons" className="space-y-4">
                     <div className="space-y-3">
-                      <Label className="text-sm font-medium">Iconos Predefinidos</Label>
+                      <Label className="text-sm font-medium">Iconos por categoría</Label>
+
+                      {/* Filtros de categoría */}
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {["todos", "amor", "celebración", "naturaleza", "lujo", "romántico", "pasión"].map(
+                          (category) => (
+                            <Button
+                              key={category}
+                              variant={selectedIconCategory === category ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setSelectedIconCategory(category)}
+                              className="text-xs h-6 px-2"
+                            >
+                              {category.charAt(0).toUpperCase() + category.slice(1)}
+                            </Button>
+                          ),
+                        )}
+                      </div>
+
                       <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
-                        {predefinedIcons.map((icon) => (
-                          <button
-                            key={icon.id}
-                            className={`p-3 rounded-lg border-2 transition-all hover:scale-105 ${
-                              selectedIcon === icon.id
-                                ? "border-pink-500 bg-pink-50 dark:bg-pink-900/20"
-                                : "border-gray-200 hover:border-pink-300 dark:border-gray-600"
-                            }`}
-                            onClick={() => setSelectedIcon(icon.id)}
-                          >
-                            <div className="flex flex-col items-center gap-1">
-                              {icon.emoji ? (
-                                <span className="text-2xl">{icon.emoji}</span>
-                              ) : (
-                                <icon.component className="w-6 h-6" />
-                              )}
-                              <span className="text-xs truncate w-full">{icon.name}</span>
-                            </div>
-                          </button>
-                        ))}
+                        {predefinedIcons
+                          .filter((icon) => selectedIconCategory === "todos" || icon.category === selectedIconCategory)
+                          .map((icon) => (
+                            <button
+                              key={icon.id}
+                              className={`p-3 rounded-lg border-2 transition-all hover:scale-105 ${
+                                selectedIcon === icon.id
+                                  ? "border-pink-500 bg-pink-50 dark:bg-pink-900/20"
+                                  : "border-gray-200 hover:border-pink-300 dark:border-gray-600"
+                              }`}
+                              onClick={() => setSelectedIcon(icon.id)}
+                            >
+                              <div className="flex flex-col items-center gap-1">
+                                {icon.emoji ? (
+                                  <span className="text-2xl">{icon.emoji}</span>
+                                ) : (
+                                  <icon.component className="w-6 h-6" />
+                                )}
+                                <span className="text-xs truncate w-full">{icon.name}</span>
+                              </div>
+                            </button>
+                          ))}
                       </div>
                     </div>
 
@@ -924,8 +1129,9 @@ export default function LoveLetterGenerator() {
                 <div className="bg-white dark:bg-gray-100 rounded-xl p-3 shadow-inner">
                   <div
                     ref={letterRef}
-                    className="w-full aspect-[3/4] p-6 rounded-lg shadow-lg transition-all duration-300 relative overflow-hidden"
+                    className={`w-full p-6 rounded-lg shadow-lg transition-all duration-300 relative overflow-hidden ${fontSizes[design.fontSize as keyof typeof fontSizes]?.class || "text-base"}`}
                     style={{
+                      aspectRatio: design.aspectRatio,
                       backgroundColor: design.backgroundColor,
                       color: design.textColor,
                       fontFamily: fontFamilies[design.fontFamily as keyof typeof fontFamilies],
